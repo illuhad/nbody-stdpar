@@ -3,17 +3,17 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(gravity VERSION 1.0 LANGUAGES CXX)
-
+set(DEVICE_CXX_FLAGS "")
 if (ENABLE_NVIDIA_GPU)
   enable_language(CUDA)
   set(CMAKE_CXX_COMPILER "nvc++")
-  set(DEVICE_CXX_FLAGS " -stdpar=gpu -fast" PARENT_SCOPE)
+  string(APPEND DEVICE_CXX_FLAGS " -stdpar=gpu -fast")
 else()
-  find_package(TBB REQUIRED)
   set(CMAKE_CXX_COMPILER "g++")
-  set(DEVICE_CXX_FLAGS  " -Ofast -march=native" PARENT_SCOPE)
+  string(APPEND DEVICE_CXX_FLAGS " -Ofast -march=native")
 endif()
+
+project(gravity VERSION 1.0 LANGUAGES CXX)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   message(STATUS "Adding device specific compiler flags to CMAKE_CXX_FLAGS: '${DEVICE_CXX_FLAGS}'")

@@ -10,5 +10,6 @@ cmake ..\
     -DCMAKE_INSTALL_PREFIX:FILEPATH=${ORIGIN_DIR}/install \
     -DCMAKE_BUILD_TYPE:STRING=Release \
     -DENABLE_NVIDIA_GPU:BOOL=ON
-make VERBOSE=1 install
+make -j4 VERBOSE=1
+make install
 cd ${ORIGIN_DIR}
