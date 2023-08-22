@@ -1,16 +1,12 @@
 
 #pragma once
 
-#include <algorithm>
 #include <execution>
-#include <math.h>
-#include <numeric>
 #include <vector>
-
 #include "physics.hh"
 
 // forward Euler
-template <typename vecT> void integrate_euler(System<vecT> &system) {
+template <class vecT> void integrate_euler(System<vecT> &system) {
   // Acc(t+dt) = f(Pos(t))
   accumulate_forces(system, system.sysAcc);
   // Vel(t+dt) = Vel(t) + Acc(t+dt) * dt
@@ -20,7 +16,7 @@ template <typename vecT> void integrate_euler(System<vecT> &system) {
 }
 
 // Velocity Verlet 4 step
-template <typename vecT> void integrate_verlet4(System<vecT> &system) {
+template <class vecT> void integrate_verlet4(System<vecT> &system) {
   const float dt{static_cast<float>(system.timestep)};
   const float half_dt{dt / 2};
   // Vel(t+dt/2) = Vel(t) + 0.5 * dt * Acc(t)
@@ -34,7 +30,7 @@ template <typename vecT> void integrate_verlet4(System<vecT> &system) {
 }
 
 // Velocity Verlet 3 step
-template <typename vecT> void integrate_verlet3(System<vecT> &system) {
+template <class vecT> void integrate_verlet3(System<vecT> &system) {
   const float dt{static_cast<float>(system.timestep)};
   const float half_dt{dt / 2};
   const float half_dtdt{dt * dt / 2};
