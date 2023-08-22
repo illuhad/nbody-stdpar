@@ -4,8 +4,13 @@
 #include <vector>
 
 struct Config {
-  int shape;
-  int nbodies;
+#ifdef ENABLE_CUDA
+  int device{1};
+#else
+  int device{2};
+#endif
+  int nbodies{-1};
+  int shape{-1};
   float timestep;
   float end_time;
 };
@@ -21,7 +26,7 @@ template <class vecT> struct System {
   T timestep{0.0};
   T elapsed_time{0.0};
   System() {}
-  void setup(const Config &config);
+  void setup(Config &config);
   void advance();
 };
 

@@ -8,7 +8,20 @@
 #include "time_integration.hh"
 #include "utils.hh"
 
-template <class vecT> void System<vecT>::setup(const Config &config) {
+template <class vecT> void System<vecT>::setup(Config &config) {
+  if (config.nbodies == -1) {
+    if (config.device == 1) {
+      config.nbodies = 32768;
+    } else if (config.device == 2) {
+      config.nbodies = 8192;
+    } else {
+      std::cout<<"ERROR: config.device is not 1 or 2, exiting.";  //the program exists if the value is 0
+      exit(0);
+    }
+    config.shape = 1; // build this out!!
+    config.timestep = 1.0f;
+    config.end_time = 10000.0f;
+  }
   num_bodies = config.nbodies;
   end_time = config.end_time;
   timestep = config.timestep;
