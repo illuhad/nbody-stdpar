@@ -3,14 +3,14 @@
 
 #include <algorithm>
 #include <execution>
-#include <math.h>
 #include <vector>
-
 #include "math_functions.hh"
 #include "physics.hh"
 
 namespace {
-inline float inv_sqrt(const float x)
+// inline probably doesn't do anything
+template <typename T>
+inline T inv_sqrt(const T x)
 {
 #ifdef ENABLE_CUDA
   return rsqrtf(x);
@@ -24,10 +24,10 @@ inline float inv_sqrt(const float x)
 // use transform to parallelize outer loop
 // each thread_i runs a sequential inner loop
 // over all particles, summing forces on particle_i
-template <typename vecT>
+template <class vecT>
 void accumulate_forces(System<vecT> &system, std::vector<vecT> &accel) {
   using T = typename vecT::value_type;
-  const int sys_size{system.sysPos.size()};
+  const size_t sys_size{system.sysPos.size()};
 
   T const *mssptr = system.sysMss.data();
   vecT const *posptr = system.sysPos.data();
@@ -35,7 +35,7 @@ void accumulate_forces(System<vecT> &system, std::vector<vecT> &accel) {
                  std::end(system.sysPos), std::begin(accel),
                  [=](const vecT &pos) {
                    vecT acc;
-                   for (int j = 0; j < sys_size; j++)
+                   for (size_t j = 0; j < sys_size; j++)
                      acc += acceleration(pos, posptr[j], mssptr[j]);
                    return acc;
                  });
@@ -47,10 +47,10 @@ void accumulate_forces(System<vecT> &system, std::vector<vecT> &accel) {
 // F_i = G*m_i*m_j / (r_ij^2)^(1/2)
 // Rearrange to solve for acceleration vector with G = 1
 // A_i = m_j * r_ij / (|r_ij|^2)^(3/2)
-template <typename vecT, typename T>
+template <class vecT, typename T>
 vecT acceleration(const vecT &pos1, const vecT &pos2, const T mass2) {
   vecT rel_dist = pos2 - pos1; // relative distance
-  T rd_sq{0.00001};            // rel_dist^2, initialize with softening length
+  T rd_sq{0.00001f};            // rel_dist^2, initialize with softening length
   rd_sq += dot_product(rel_dist);
   const T rd_mag = inv_sqrt(rd_sq); // 1 / (rel_dist dot rel_dist)^(1/2)
   const T impulse = mass2 * rd_mag * rd_mag * rd_mag; // m_j / |rel_dist|^3
@@ -58,9 +58,9 @@ vecT acceleration(const vecT &pos1, const vecT &pos2, const T mass2) {
   return rel_dist;
 }
 
-template <typename vecT>
-void update_velocities(System<vecT> &system, double timestep) {
-  const float dt{static_cast<float>(timestep)};
+template <class vecT, typename T>
+void update_velocities(System<vecT> &system, T timestep) {
+  const float dt{timestep};
   std::transform(std::execution::par_unseq, std::begin(system.sysAcc),
                  std::end(system.sysAcc), std::begin(system.sysVel),
                  std::begin(system.sysVel), [=](const vecT &accel, vecT &vel) {
@@ -69,8 +69,8 @@ void update_velocities(System<vecT> &system, double timestep) {
                  });
 }
 
-template <typename vecT>
-void update_positions(System<vecT> &system, double timestep) {
+template <class vecT, typename T>
+void update_positions(System<vecT> &system, T timestep) {
   const float dt{static_cast<float>(timestep)};
   std::transform(std::execution::par_unseq, std::begin(system.sysVel),
                  std::end(system.sysVel), std::begin(system.sysPos),
@@ -80,7 +80,7 @@ void update_positions(System<vecT> &system, double timestep) {
                  });
 }
 
-template <typename vecT>
+template <class vecT>
 std::vector<vecT> calculate_momentum(System<vecT> &system) {
   std::vector<vecT> momentum(system.sysVel.size(), vecT());
   std::transform(std::execution::par_unseq, std::begin(system.sysVel),
@@ -88,4 +88,15 @@ std::vector<vecT> calculate_momentum(System<vecT> &system) {
                  std::begin(momentum),
                  [=](vecT vel, float mss) { return vel * mss; });
   return momentum;
+}
+
+template <class vecT>
+auto calculate_velocity_mag(System<vecT> &system) {
+  using T = typename vecT::value_type;
+  std::vector<T> vel_mag(system.sysVel.size(), 0.0f);
+  std::transform(std::execution::par_unseq,
+                 std::begin(system.sysVel), std::end(system.sysVel),
+                 std::begin(vel_mag),
+                 [=](const vecT &vel) { return magnitude(vel); });
+  return vel_mag;
 }
