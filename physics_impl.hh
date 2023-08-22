@@ -9,6 +9,17 @@
 #include "math_functions.hh"
 #include "physics.hh"
 
+namespace {
+inline float inv_sqrt(const float x)
+{
+#ifdef ENABLE_CUDA
+  return rsqrtf(x);
+#else
+  __m128 y = _mm_set_ss(x); y = _mm_rsqrt_ss(y); return _mm_cvtss_f32(y);
+#endif
+}
+}
+
 // Calculate all-pairs forces
 // use transform to parallelize outer loop
 // each thread_i runs a sequential inner loop
@@ -41,7 +52,7 @@ vecT acceleration(const vecT &pos1, const vecT &pos2, const T mass2) {
   vecT rel_dist = pos2 - pos1; // relative distance
   T rd_sq{0.00001};            // rel_dist^2, initialize with softening length
   rd_sq += dot_product(rel_dist);
-  const T rd_mag = rsqrtf(rd_sq); // 1 / (rel_dist dot rel_dist)^(1/2)
+  const T rd_mag = inv_sqrt(rd_sq); // 1 / (rel_dist dot rel_dist)^(1/2)
   const T impulse = mass2 * rd_mag * rd_mag * rd_mag; // m_j / |rel_dist|^3
   rel_dist *= impulse;                                // acceleration vector
   return rel_dist;
