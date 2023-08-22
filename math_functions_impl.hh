@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <math.h>
 #include "math_functions.hh"
 
 template <class vecT> vecT cross_product(const vecT &v1, const vecT &v2) {
