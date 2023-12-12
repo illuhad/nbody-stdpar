@@ -4,7 +4,7 @@
 #include <vector>
 
 struct Config {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_ACPP)
   int device{1};
 #else
   int device{2};

@@ -12,8 +12,11 @@ namespace {
 template <typename T>
 inline T inv_sqrt(const T x)
 {
-#ifdef ENABLE_CUDA
-  return rsqrtf(x);
+#if defined(ENABLE_CUDA) || defined(ENABLE_ACPP)
+  //return rsqrtf(x);
+  // For compatibility and comparability between AdaptiveCpp, nvc++ and roc-stdpar,
+  // we use 1./sqrtf() since this is the only thing that standard C++ gives us.
+  return 1.f/sqrtf(x);
 #else
   __m128 y = _mm_set_ss(x); y = _mm_rsqrt_ss(y); return _mm_cvtss_f32(y);
 #endif
